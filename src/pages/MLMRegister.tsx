@@ -26,6 +26,8 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SecurityIcon from '@mui/icons-material/Security';
 import { useMining } from '../context/MiningContext';
+import { getContract, readContract } from "thirdweb";
+import { client, bscTestnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
 
 const MLMRegister: React.FC = () => {
   const navigate = useNavigate();
@@ -46,6 +48,7 @@ const MLMRegister: React.FC = () => {
   const [registrationStatus, setRegistrationStatus] = useState<'idle' | 'registering' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [activeStep, setActiveStep] = useState(0);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
 
   // Get referrer from URL params or use owner address as default
   useEffect(() => {
@@ -58,12 +61,57 @@ const MLMRegister: React.FC = () => {
     }
   }, [searchParams]);
 
-  // Check registration status
+  // Check registration status and redirect if already registered
   useEffect(() => {
-    if (isConnected && isRegistered) {
-      navigate('/dashboard');
+    const checkAndRedirect = async () => {
+      if (isConnected && isCorrectNetwork && address) {
+        try {
+          setCheckingRegistration(true);
+          // Check if user is already registered
+          const registered = await checkRegistration();
+          if (registered) {
+            // User is already registered, redirect to dashboard
+            console.log('User is already registered, redirecting to dashboard');
+            navigate('/dashboard', { replace: true });
+          }
+        } catch (error) {
+          console.error('Error checking registration status:', error);
+        } finally {
+          setCheckingRegistration(false);
+        }
+      }
+    };
+
+    // Add a small delay to ensure wallet connection is fully established
+    const timeoutId = setTimeout(checkAndRedirect, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [isConnected, isCorrectNetwork, address, navigate]);
+
+  // Helper function to check registration status
+  const checkRegistration = async (): Promise<boolean> => {
+    if (!address || !isCorrectNetwork) return false;
+
+    try {
+      const contract = getContract({
+        client,
+        chain: bscTestnet,
+        address: MINING_CONTRACT_ADDRESS,
+        abi: MINING_CONTRACT_ABI,
+      });
+
+      const registered = await readContract({
+        contract,
+        method: "checkIfRegistered",
+        params: [address],
+      });
+      
+      return registered;
+    } catch (error) {
+      console.error('Error checking registration:', error);
+      return false;
     }
-  }, [isConnected, isRegistered, navigate]);
+  };
 
   // Update stepper based on connection status
   useEffect(() => {
@@ -150,6 +198,16 @@ const MLMRegister: React.FC = () => {
           <Typography variant="h6" color="text.secondary">
             Register to start mining and earning rewards
           </Typography>
+          
+          {/* Show loading indicator when checking registration */}
+          {checkingRegistration && (
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <CircularProgress size={20} />
+              <Typography variant="body2" color="text.secondary">
+                Checking registration status...
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Fade>
 

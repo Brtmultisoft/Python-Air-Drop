@@ -4,6 +4,17 @@ import { createWallet } from "thirdweb/wallets";
 import { useActiveAccount, useActiveWallet, useConnect } from "thirdweb/react";
 import { client, bscTestnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
 
+// Extend Window interface for ethereum
+declare global {
+  interface Window {
+    ethereum?: {
+      request: (args: { method: string; params?: any[] }) => Promise<any>;
+      on: (event: string, callback: (...args: any[]) => void) => void;
+      removeListener: (event: string, callback: (...args: any[]) => void) => void;
+    };
+  }
+}
+
 interface UserRecord {
   totalMinted: bigint;
   isExists: boolean;
@@ -261,9 +272,36 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
 
   const disconnectWallet = async () => {
     try {
+      setIsLoading(true);
+      
       // Disconnect ThirdWeb wallet
       if (activeWallet) {
         await activeWallet.disconnect();
+      }
+      
+      // Also try to disconnect from MetaMask directly if available
+      if (typeof window !== 'undefined' && window.ethereum) {
+        try {
+          // Try to clear MetaMask connection by requesting empty accounts
+          await window.ethereum.request({
+            method: "eth_requestAccounts",
+            params: []
+          });
+          
+          // Also try to revoke permissions if supported
+          try {
+            await window.ethereum.request({
+              method: "wallet_revokePermissions",
+              params: [{ eth_accounts: {} }]
+            });
+          } catch (revokeError) {
+            // This method might not be supported, which is fine
+            console.log('MetaMask revoke permissions not supported');
+          }
+        } catch (error) {
+          // MetaMask might not support these methods, which is fine
+          console.log('MetaMask disconnect methods not supported');
+        }
       }
     } catch (error) {
       console.error('Error disconnecting wallet:', error);
@@ -278,6 +316,7 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
       setRegReward(BigInt(0));
       setTimeUntilNextClaim(0);
       setTotalRegistered(0);
+      setIsLoading(false);
     }
   };
 

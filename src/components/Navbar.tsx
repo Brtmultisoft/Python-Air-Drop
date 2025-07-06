@@ -245,10 +245,15 @@ const Navbar: React.FC = () => {
                   onClick={async () => {
                     try {
                       await currentWallet.disconnectWallet();
+                      // Force page reload to ensure clean state
+                      window.location.reload();
                     } catch (error) {
                       console.error('Error disconnecting wallet:', error);
+                      // Even if there's an error, try to reload to reset state
+                      window.location.reload();
                     }
                   }}
+                  disabled={currentWallet.loading}
                   sx={{
                     borderColor: 'rgba(255, 255, 255, 0.5)',
                     '&:hover': { borderColor: 'white', backgroundColor: 'rgba(255, 255, 255, 0.1)' },
@@ -258,7 +263,7 @@ const Navbar: React.FC = () => {
                   }}
                   startIcon={!isMobile ? <LogoutIcon /> : undefined}
                 >
-                  {isMobile ? 'Exit' : 'Disconnect'}
+                  {isMobile ? 'Exit' : currentWallet.loading ? 'Disconnecting...' : 'Disconnect'}
                 </Button>
               ) : (
                 <Box sx={{

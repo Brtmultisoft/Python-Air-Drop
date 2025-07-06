@@ -25,7 +25,8 @@ import {
   DialogActions,
   IconButton,
   TextField,
-  InputAdornment
+  InputAdornment,
+  CircularProgress
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { useMining } from '../context/MiningContext';
@@ -155,7 +156,8 @@ const MLMDashboard: React.FC = () => {
     canClaim,
     timeUntilNextClaim,
     claimDailyReward,
-    refreshData
+    refreshData,
+    isCorrectNetwork
   } = useMining();
   const navigate = useNavigate();
   const theme = useTheme();
@@ -177,6 +179,7 @@ const MLMDashboard: React.FC = () => {
   });
 
   const [loading, setLoading] = useState(false);
+  const [checkingRegistration, setCheckingRegistration] = useState(false);
 
   // Snackbar state for referral link copy feedback
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -205,6 +208,28 @@ const MLMDashboard: React.FC = () => {
 
     return () => clearInterval(refreshInterval);
   }, [isConnected, isRegistered, refreshData]);
+
+  // Check registration status and redirect if needed
+  useEffect(() => {
+    const checkRegistrationAndRedirect = async () => {
+      if (isConnected && isCorrectNetwork) {
+        try {
+          setCheckingRegistration(true);
+          // If user is not registered, redirect to registration
+          if (!isRegistered) {
+            console.log('User is not registered, redirecting to registration');
+            navigate('/register', { replace: true });
+          }
+        } catch (error) {
+          console.error('Error checking registration status:', error);
+        } finally {
+          setCheckingRegistration(false);
+        }
+      }
+    };
+
+    checkRegistrationAndRedirect();
+  }, [isConnected, isCorrectNetwork, isRegistered, navigate]);
 
   // Load dashboard data
   useEffect(() => {
@@ -415,6 +440,16 @@ const MLMDashboard: React.FC = () => {
           <Typography variant="h6" color="text.secondary">
             Welcome back! Here's your mining overview.
           </Typography>
+          
+          {/* Show loading indicator when checking registration */}
+          {checkingRegistration && (
+            <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
+              <CircularProgress size={20} />
+              <Typography variant="body2" color="text.secondary">
+                Checking registration status...
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Fade>
 
