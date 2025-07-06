@@ -49,6 +49,7 @@ const MLMRegister: React.FC = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [activeStep, setActiveStep] = useState(0);
   const [checkingRegistration, setCheckingRegistration] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
 
   // Get referrer from URL params or use owner address as default
   useEffect(() => {
@@ -61,10 +62,20 @@ const MLMRegister: React.FC = () => {
     }
   }, [searchParams]);
 
+  // Immediate redirect if already registered
+  useEffect(() => {
+    if (isConnected && isCorrectNetwork && isRegistered) {
+      console.log('User is already registered (from context), redirecting to dashboard');
+      navigate('/dashboard', { replace: true });
+    }
+  }, [isConnected, isCorrectNetwork, isRegistered, navigate]);
+
   // Check registration status and redirect if already registered
   useEffect(() => {
     const checkAndRedirect = async () => {
-      if (isConnected && isCorrectNetwork && address) {
+      // Don't check if we're currently registering or if registration was just successful
+      // Also don't check if user is already registered according to context
+      if (isConnected && isCorrectNetwork && address && !isRegistering && !isRegistered && registrationStatus !== 'registering' && registrationStatus !== 'success') {
         try {
           setCheckingRegistration(true);
           // Check if user is already registered
@@ -86,7 +97,7 @@ const MLMRegister: React.FC = () => {
     const timeoutId = setTimeout(checkAndRedirect, 1000);
     
     return () => clearTimeout(timeoutId);
-  }, [isConnected, isCorrectNetwork, address, navigate]);
+  }, [isConnected, isCorrectNetwork, address, navigate, registrationStatus, isRegistering, isRegistered]);
 
   // Helper function to check registration status
   const checkRegistration = async (): Promise<boolean> => {
@@ -103,7 +114,7 @@ const MLMRegister: React.FC = () => {
       const registered = await readContract({
         contract,
         method: "checkIfRegistered",
-        params: [address],
+        params: [address as `0x${string}`],
       });
       
       return registered;
@@ -130,6 +141,7 @@ const MLMRegister: React.FC = () => {
     if (!isConnected || !isCorrectNetwork) return;
 
     try {
+      setIsRegistering(true);
       setRegistrationStatus('registering');
       setErrorMessage('');
 
@@ -137,10 +149,11 @@ const MLMRegister: React.FC = () => {
 
       if (success) {
         setRegistrationStatus('success');
-        // Refresh data to ensure registration status is updated
-        await refreshData();
+        // Don't call refreshData here as it might interfere with navigation
+        // The context will handle the state update
+        console.log('Registration successful, redirecting to dashboard...');
         setTimeout(() => {
-          navigate('/dashboard');
+          navigate('/dashboard', { replace: true });
         }, 2000);
       } else {
         setRegistrationStatus('error');
@@ -149,6 +162,8 @@ const MLMRegister: React.FC = () => {
     } catch (error: any) {
       setRegistrationStatus('error');
       setErrorMessage(error.message || 'Registration failed. Please try again.');
+    } finally {
+      setIsRegistering(false);
     }
   };
 

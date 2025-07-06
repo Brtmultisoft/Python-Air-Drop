@@ -7,11 +7,7 @@ import { client, bscTestnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from
 // Extend Window interface for ethereum
 declare global {
   interface Window {
-    ethereum?: {
-      request: (args: { method: string; params?: any[] }) => Promise<any>;
-      on: (event: string, callback: (...args: any[]) => void) => void;
-      removeListener: (event: string, callback: (...args: any[]) => void) => void;
-    };
+    ethereum?: any;
   }
 }
 
@@ -200,8 +196,18 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
         account: account,
       });
 
+      // Set registration status immediately
       setIsRegistered(true);
-      await refreshData();
+      
+      // Refresh data in the background without blocking
+      setTimeout(async () => {
+        try {
+          await refreshData();
+        } catch (error) {
+          console.error('Error refreshing data after registration:', error);
+        }
+      }, 1000);
+      
       return true;
     } catch (error) {
       console.error('Error registering:', error);
