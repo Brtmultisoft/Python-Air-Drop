@@ -21,7 +21,7 @@ import { Link as RouterLink, useLocation, useNavigate } from 'react-router-dom';
 import { useMining } from '../context/MiningContext';
 import { ConnectButton } from "thirdweb/react";
 import { createWallet } from "thirdweb/wallets";
-import { client, bscTestnet } from '../client';
+import { client, bscMainnet } from '../client';
 import HomeIcon from '@mui/icons-material/Home';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import PersonAddIcon from '@mui/icons-material/PersonAdd';
@@ -274,14 +274,14 @@ const Navbar: React.FC = () => {
                   <ConnectButton
                     client={client}
                     wallets={wallets}
-                    chain={bscTestnet}
+                    chain={bscMainnet}
                     connectModal={{
                       size: isMobile ? "compact" : "wide",
                       title: "Connect to Python Air Drop",
                       showThirdwebBranding: false,
                     }}
                     switchButton={{
-                      label: "Switch to BSC Testnet",
+                      label: "Switch to BSC Mainnet",
                     }}
                   />
                 </Box>

@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { getContract, readContract, prepareContractCall, sendTransaction } from "thirdweb";
 import { createWallet } from "thirdweb/wallets";
 import { useActiveAccount, useActiveWallet, useConnect } from "thirdweb/react";
-import { client, bscTestnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
+import { client, bscMainnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
 
 // Extend Window interface for ethereum
 declare global {
@@ -68,12 +68,12 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
   const isConnected = !!account && !!address;
 
   const isCorrectNetwork = useMemo(() => {
-    return chainId === bscTestnet.id || chainId === 97;
+    return chainId === bscMainnet.id;
   }, [chainId]);
 
   const contract = getContract({
     client,
-    chain: bscTestnet,
+    chain: bscMainnet,
     address: MINING_CONTRACT_ADDRESS,
     abi: MINING_CONTRACT_ABI,
   });
@@ -329,12 +329,12 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
   const switchToCorrectNetwork = async () => {
     try {
       if (activeWallet) {
-        await activeWallet.switchChain(bscTestnet);
+        await activeWallet.switchChain(bscMainnet);
       } else {
         throw new Error('No active wallet available');
       }
     } catch (error) {
-      throw new Error('Failed to switch to BSC Testnet. Please switch manually in your wallet.');
+      throw new Error('Failed to switch to BSC Mainnet. Please switch manually in your wallet.');
     }
   };
 
