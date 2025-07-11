@@ -150,19 +150,7 @@ const MLMRegister: React.FC = () => {
 
       if (success) {
         setRegistrationStatus('success');
-        // Approve unlimited USDT for mining contract after registration, only if not already approved
-        try {
-          if (address) {
-            const currentAllowance = await getUSDTAllowance(address, MINING_CONTRACT_ADDRESS);
-            if (currentAllowance.lt(ethers.constants.MaxUint256.div(2))) {
-              await approveUSDT(MINING_CONTRACT_ADDRESS, ethers.constants.MaxUint256);
-            } else {
-              setErrorMessage('USDT is already approved for the mining contract.');
-            }
-          }
-        } catch (approvalError) {
-          setErrorMessage('Registration succeeded, but USDT approval failed. Please approve manually in your wallet.');
-        }
+        
         // Don't call refreshData here as it might interfere with navigation
         // The context will handle the state update
         console.log('Registration successful, redirecting to dashboard...');
