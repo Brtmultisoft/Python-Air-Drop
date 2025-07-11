@@ -141,6 +141,13 @@ if (typeof document !== 'undefined') {
   document.head.appendChild(styleSheet);
 }
 
+function formatTimeHMS(seconds: number): string {
+  const h = Math.floor(seconds / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = seconds % 60;
+  return [h, m, s].map(v => v.toString().padStart(2, '0')).join(':');
+}
+
 const MLMDashboard: React.FC = () => {
   const {
     isConnected,
@@ -652,7 +659,7 @@ const MLMDashboard: React.FC = () => {
                   </Typography>
                 </Box>
                 <Typography variant="h4" sx={{ fontWeight: 'bold', color: canClaim ? '#4CAF50' : '#673AB7' }}>
-                  {canClaim ? 'Ready!' : `${Math.floor(timeUntilNextClaim / 60)}:${(timeUntilNextClaim % 60).toString().padStart(2, '0')}`}
+                  {canClaim ? 'Ready!' : formatTimeHMS(timeUntilNextClaim)}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {canClaim ? 'Claim available' : 'Next claim in'}
@@ -783,7 +790,7 @@ const MLMDashboard: React.FC = () => {
                       })
                     }}
                   >
-                    {canClaim ? 'Claim Daily Reward' : `Next Claim: ${Math.floor(timeUntilNextClaim / 60)}:${(timeUntilNextClaim % 60).toString().padStart(2, '0')}`}
+                    {canClaim ? 'Claim Daily Reward' : `Next Claim: ${formatTimeHMS(timeUntilNextClaim)}`}
                   </Button>
 
                   <Button
