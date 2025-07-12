@@ -437,17 +437,16 @@ const MLMDashboard: React.FC = () => {
   }
 
   return (
-    <Container maxWidth="lg" sx={{ py: 4 }}>
+    <Container maxWidth="lg" sx={{ py: 4, background: { xs: '#f5f5f5', md: 'transparent' }, minHeight: '100vh' }}>
       {/* Header */}
       <Fade in={showContent} timeout={1000}>
         <Box sx={{ mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#1b5e20', fontWeight: 600 }}>
+          <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#1976d2', fontWeight: 600 }}>
             Mining Dashboard
           </Typography>
           <Typography variant="h6" color="text.secondary">
             Welcome back! Here's your mining overview.
           </Typography>
-          
           {/* Show loading indicator when checking registration */}
           {checkingRegistration && (
             <Box sx={{ mt: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 1 }}>
@@ -459,15 +458,15 @@ const MLMDashboard: React.FC = () => {
           )}
         </Box>
       </Fade>
-
       {/* Continuous Mining Animation Banner */}
       <Fade in={showContent} timeout={1500}>
         <Card sx={{
           mb: 4,
-          background: 'linear-gradient(135deg, #1b5e20 0%, #2e7d32 50%, #388e3c 100%)',
-          color: 'white',
+          background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%)',
+          color: '#1976d2',
           position: 'relative',
-          overflow: 'hidden'
+          overflow: 'hidden',
+          border: '1px solid #bbdefb',
         }} className="continuous-mining">
           <CardContent sx={{ py: 3 }}>
             <Box sx={{
@@ -483,7 +482,7 @@ const MLMDashboard: React.FC = () => {
                   <BuildIcon
                     sx={{
                       fontSize: 40,
-                      color: '#fff'
+                      color: '#1976d2'
                     }}
                     className="mining-rotate"
                   />
@@ -564,7 +563,6 @@ const MLMDashboard: React.FC = () => {
           </CardContent>
         </Card>
       </Fade>
-
       {/* Stats Cards */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
         {/* Total Minted */}
@@ -572,15 +570,16 @@ const MLMDashboard: React.FC = () => {
           <Zoom in={showContent} timeout={1000} style={{ transitionDelay: '100ms' }}>
             <Card sx={{
               ...cardStyle,
-              background: 'linear-gradient(135deg, rgba(27, 94, 32, 0.05) 0%, rgba(46, 125, 50, 0.1) 100%)',
-              border: '2px solid rgba(46, 125, 50, 0.2)',
+              background: '#ffffff',
+              border: '1px solid #e0e0e0',
+              color: '#1976d2',
             }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
-                  <MonetizationOnIcon sx={{ color: '#1b5e20', mr: 1 }} className="mining-animation" />
-                  <Typography variant="h6" sx={{ color: '#1b5e20' }}>Total Minted</Typography>
+                  <MonetizationOnIcon sx={{ color: '#1976d2', mr: 1 }} className="mining-animation" />
+                  <Typography variant="h6" sx={{ color: '#1976d2' }}>Total Minted</Typography>
                 </Box>
-                <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1b5e20' }}>
+                <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
                   {dashboardData.totalMinted.toFixed(4)} Tokens
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
@@ -596,8 +595,9 @@ const MLMDashboard: React.FC = () => {
           <Zoom in={showContent} timeout={1000} style={{ transitionDelay: '200ms' }}>
             <Card sx={{
               ...cardStyle,
-              background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 215, 0, 0.1) 100%)',
-              border: '2px solid rgba(255, 193, 7, 0.2)',
+              background: '#ffffff',
+              border: '1px solid #e0e0e0',
+              color: '#FFA000',
             }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -620,8 +620,9 @@ const MLMDashboard: React.FC = () => {
           <Zoom in={showContent} timeout={1000} style={{ transitionDelay: '250ms' }}>
             <Card sx={{
               ...cardStyle,
-              background: 'linear-gradient(135deg, rgba(156, 39, 176, 0.05) 0%, rgba(142, 36, 170, 0.1) 100%)',
-              border: '2px solid rgba(156, 39, 176, 0.2)',
+              background: '#ffffff',
+              border: '1px solid #e0e0e0',
+              color: '#9C27B0',
             }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -644,12 +645,9 @@ const MLMDashboard: React.FC = () => {
           <Zoom in={showContent} timeout={1000} style={{ transitionDelay: '350ms' }}>
             <Card sx={{
               ...cardStyle,
-              background: canClaim
-                ? 'linear-gradient(135deg, rgba(76, 175, 80, 0.05) 0%, rgba(139, 195, 74, 0.1) 100%)'
-                : 'linear-gradient(135deg, rgba(103, 58, 183, 0.05) 0%, rgba(63, 81, 181, 0.1) 100%)',
-              border: canClaim
-                ? '2px solid rgba(76, 175, 80, 0.2)'
-                : '2px solid rgba(103, 58, 183, 0.2)',
+              background: '#ffffff',
+              border: '1px solid #e0e0e0',
+              color: canClaim ? '#4CAF50' : '#673AB7',
             }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -674,8 +672,9 @@ const MLMDashboard: React.FC = () => {
           <Zoom in={showContent} timeout={1000} style={{ transitionDelay: '400ms' }}>
             <Card sx={{
               ...cardStyle,
-              background: 'linear-gradient(135deg, rgba(0, 188, 212, 0.05) 0%, rgba(3, 169, 244, 0.1) 100%)',
-              border: '2px solid rgba(0, 188, 212, 0.2)',
+              background: '#ffffff',
+              border: '1px solid #e0e0e0',
+              color: '#00BCD4',
             }}>
               <CardContent>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -694,11 +693,12 @@ const MLMDashboard: React.FC = () => {
         </Grid>
       </Grid>
 
+      {/* Update quick actions and mining progress cards to use light backgrounds */}
       <Grid container spacing={3}>
         {/* Mining Progress */}
         <Grid item xs={12} md={6}>
           <Fade in={showContent} timeout={1500}>
-            <Card sx={cardStyle}>
+            <Card sx={{ ...cardStyle, background: '#ffffff', border: '1px solid #e0e0e0', color: '#1976d2' }}>
               <CardContent sx={{ p: 3 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
                   <DiamondIcon sx={{ color: getLevelColor(dashboardData.level), mr: 1 }} />
@@ -751,7 +751,7 @@ const MLMDashboard: React.FC = () => {
         {/* Quick Actions */}
         <Grid item xs={12} md={6}>
           <Fade in={showContent} timeout={1500}>
-            <Card sx={cardStyle}>
+            <Card sx={{ ...cardStyle, background: '#ffffff', border: '1px solid #e0e0e0', color: '#1976d2' }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
                   Mining Actions
@@ -836,7 +836,7 @@ const MLMDashboard: React.FC = () => {
         {/* Recent Activity */}
         <Grid item xs={12}>
           <Fade in={showContent} timeout={2000}>
-            <Card sx={cardStyle}>
+            <Card sx={{ ...cardStyle, background: '#ffffff', border: '1px solid #e0e0e0', color: '#1976d2' }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h5" sx={{ fontWeight: 600, mb: 3 }}>
                   Recent Mining Activity
