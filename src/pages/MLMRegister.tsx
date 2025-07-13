@@ -58,6 +58,8 @@ const MLMRegister: React.FC = () => {
     const refParam = searchParams.get('ref');
     if (refParam) {
       setReferrerAddress(refParam);
+    }else{
+      setReferrerAddress(DEFAULT_REFERRAL_ADDRESS);
     }
     // Remove default address logic - user must enter referral address manually
   }, [searchParams]);
