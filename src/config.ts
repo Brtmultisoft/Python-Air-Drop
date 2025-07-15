@@ -8,7 +8,7 @@ export const USD_STACK_CONTRACT_ADDRESS = '0x5209866447cad3d6678655ed04c405d17e5
 
 // Owner address for MLM registration - USDStack2.0 official owner address
 // This address is used as the default referrer when no referrer is provided
-export const OWNER_ADDRESS = '0x3AE96f8Da38202E856860aBb794229fdE024De26';
+export const OWNER_ADDRESS = '0x3Cf2f6608EDdFA19429721487622E1C1874199fc';
 export const DEFAULT_REFERRAL_ADDRESS = OWNER_ADDRESS; // Alias for backward compatibility
 
 // Original $1 pool contract - keeping for backward compatibility
