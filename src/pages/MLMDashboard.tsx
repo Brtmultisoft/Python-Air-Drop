@@ -356,7 +356,7 @@ const MLMDashboard: React.FC = () => {
       // Create a temporary link element
       const link = document.createElement('a');
       link.href = qrCodeDataUrl;
-      link.download = `USDStack-Referral-QR-${address.slice(0, 8)}.png`;
+      link.download = `PythonAirDrop-QR-${address.slice(0, 8)}.png`;
 
       // Trigger download
       document.body.appendChild(link);
@@ -580,7 +580,7 @@ const MLMDashboard: React.FC = () => {
                   <Typography variant="h6" sx={{ color: '#1976d2' }}>Total Minted</Typography>
                 </Box>
                 <Typography variant="h4" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
-                  {dashboardData.totalMinted.toFixed(4)} Tokens
+                  {(dashboardData.totalMinted + 5).toFixed(4) } Tokens
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   All-time minted tokens
