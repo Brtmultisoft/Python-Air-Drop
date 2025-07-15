@@ -46,7 +46,7 @@ export const LOGO_CONFIG = {
   },
   
   // Alt text
-  alt: 'USDStack Logo',
+  alt: 'Python Air Drop logo',
   
   // Common styles
   styles: {
